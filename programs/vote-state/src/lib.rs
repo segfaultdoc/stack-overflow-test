@@ -43,7 +43,7 @@ pub struct CircBuf<I> {
     is_empty: bool,
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Default)]
 pub struct BlockTimestamp {
     pub slot: Slot,
     pub timestamp: UnixTimestamp,
@@ -109,10 +109,12 @@ pub struct VoteState {
     /// percentage (0-100) that represents what part of a rewards
     ///  payout should be given to this VoteAccount
     pub commission: u8,
+    #[serde(skip_deserializing)]
     pub votes: VecDeque<Lockout>,
 
     // This usually the last Lockout which was popped from self.votes.
     // However, it can be arbitrary slot, when being used inside Tower
+    #[serde(skip_deserializing)]
     pub root_slot: Option<Slot>,
 
     /// the signer for vote transactions
@@ -121,13 +123,16 @@ pub struct VoteState {
     /// history of prior authorized voters and the epochs for which
     /// they were set, the bottom end of the range is inclusive,
     /// the top of the range is exclusive
+    #[serde(skip_deserializing)]
     prior_voters: CircBuf<(Pubkey, Epoch, Epoch)>,
 
     /// history of how many credits earned by the end of each epoch
     ///  each tuple is (Epoch, credits, prev_credits)
+    #[serde(skip_deserializing)]
     pub(crate) epoch_credits: Vec<(Epoch, u64, u64)>,
 
     /// most recent timestamp submitted with a vote
+    #[serde(skip_deserializing)]
     pub last_timestamp: BlockTimestamp,
 }
 
@@ -143,6 +148,7 @@ pub struct VoteState0_23_5 {
 
     /// history of prior authorized voters and the epoch ranges for which
     ///  they were set
+    #[serde(skip_deserializing)]
     pub prior_voters: CircBuf<(Pubkey, Epoch, Epoch, Slot)>,
 
     /// the signer for withdrawals
@@ -151,14 +157,18 @@ pub struct VoteState0_23_5 {
     ///  payout should be given to this VoteAccount
     pub commission: u8,
 
+    #[serde(skip_deserializing)]
     pub votes: VecDeque<Lockout>,
+    #[serde(skip_deserializing)]
     pub root_slot: Option<u64>,
 
     /// history of how many credits earned by the end of each epoch
     ///  each tuple is (Epoch, credits, prev_credits)
+    #[serde(skip_deserializing)]
     pub epoch_credits: Vec<(Epoch, u64, u64)>,
 
     /// most recent timestamp submitted with a vote
+    #[serde(skip_deserializing)]
     pub last_timestamp: BlockTimestamp,
 }
 
@@ -170,8 +180,8 @@ impl VoteState {
 
         let data = account_info.data.borrow();
         deserialize::<Box<VoteStateVersions>>(&data)
-            .map(|v| v.convert_to_current())
-            .map_err(|_| AccountDidNotDeserialize.into())
+        .map(|v| v.convert_to_current())
+        .map_err(|_| AccountDidNotDeserialize.into())
     }
 }
 
@@ -193,10 +203,6 @@ pub mod lite {
         pub authorized_voter: Pubkey,
         /// when the authorized voter was set/initialized
         pub authorized_voter_epoch: Epoch,
-
-        /// history of prior authorized voters and the epoch ranges for which
-        ///  they were set
-        pub prior_voters: CircBuf<(Pubkey, Epoch, Epoch, Slot)>,
 
         /// the signer for withdrawals
         pub authorized_withdrawer: Pubkey,
